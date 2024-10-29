@@ -3,3 +3,5 @@ dist
 build
 .env
 todo
+ec2-compose.yaml
+.act*

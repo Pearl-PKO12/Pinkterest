@@ -23,6 +23,16 @@ inputs:
   ECR_REPOSITORY:
     description: 'AWS region'
     required: true
+  EC2_USERNAME:
+    required: true
+  EC2_URL: 
+    required: true
+  EC2_SSH_KEY:
+    required: true
+  service_name:
+    required: true
+
+
 
 runs: 
   using: "composite"
@@ -71,3 +81,22 @@ runs:
         file: ${{ inputs.docker_file_path }}
         push: true
         tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
+    
+    - name: Set up SSH key
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ inputs.EC2_SSH_KEY }}
+
+    - name: Pull the images 
+      shell: bash
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ inputs.EC2_USERNAME }}@${{ inputs.EC2_URL }} << 'EOF'
+          aws ecr-public get-login-password --region ${{inputs.REGION}} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+
+          cd ~/pinterest/pinterest
+
+          docker compose pull ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
+
+          FRONTEND_TAG=${{ steps.vars.outputs.sha_short }} BACKEND_TAG=${{ steps.vars.outputs.sha_short }} docker compose -f ec2-compose.yaml up -d --force-recreate ${{inputs.service_name}} 
+
+        EOF
