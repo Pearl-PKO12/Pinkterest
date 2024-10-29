@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - dev
+      - workflow
   pull_request:
     branches:
-      - dev
+      - workflow
 
 permissions:
   id-token: write   
@@ -39,11 +39,15 @@ jobs:
         with: 
           docker_file_path: ./apps/web/Dockerfile
           image_name: web 
+          service_name: frontend
           ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           REGION: ${{ secrets.REGION }}
           ECR_REPOSITORY: ${{ secrets.ECR_WEB_REPOSITORY }}
-  
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          EC2_URL: ${{ secrets.EC2_URL }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+    
   server:     
     runs-on: ubuntu-latest
       
@@ -55,10 +59,16 @@ jobs:
         with: 
           docker_file_path: ./apps/server/DockerfileBuild
           image_name: server 
+          service_name: backend
           ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           REGION: ${{ secrets.REGION }}
           ECR_REPOSITORY: ${{ secrets.ECR_SERVER_REPOSITORY }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          EC2_URL: ${{ secrets.EC2_URL }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
 
 
+
+    
