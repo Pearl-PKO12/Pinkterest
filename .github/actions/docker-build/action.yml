@@ -4,7 +4,7 @@ inputs:
   docker_file_path:
     required: true
     type: string
-  image_name:
+  service_name:
     required: true
     type: string
   build_args:
@@ -29,7 +29,7 @@ inputs:
     required: true
   EC2_SSH_KEY:
     required: true
-  service_name:
+  container_name:
     required: true
 
 
@@ -47,9 +47,9 @@ runs:
       uses: actions/cache@v3
       with:
         path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ inputs.image_name }}-${{ github.sha }}
+        key: ${{ runner.os }}-buildx-${{ inputs.service_name }}-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-buildx-${{ inputs.image_name }}-
+          ${{ runner.os }}-buildx-${{ inputs.service_name }}-
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
@@ -95,8 +95,17 @@ runs:
 
           cd ~/pinterest/pinterest
 
-          docker compose pull ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
+          docker pull ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
 
-          FRONTEND_TAG=${{ steps.vars.outputs.sha_short }} BACKEND_TAG=${{ steps.vars.outputs.sha_short }} docker compose -f ec2-compose.yaml up -d --force-recreate ${{inputs.service_name}} 
+          TAG=${{ steps.vars.outputs.sha_short }}
+
+          PREVIOUS_CONTAINER=$(docker ps -aqf "name=${{inputs.container_name}}")
+          PREVIOUS_IMAGE=$(docker images -q --filter "reference=${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}")
+          docker container rm -f $PREVIOUS_CONTAINER || true
+
+          echo $PREVIOUS_IMAGE
+          docker rmi -f $PREVIOUS_IMAGE || true
+
+          FRONTEND_TAG=$TAG BACKEND_TAG=$TAG docker compose -f ec2-compose.yaml up -d --force-recreate ${{inputs.service_name}} 
 
         EOF
