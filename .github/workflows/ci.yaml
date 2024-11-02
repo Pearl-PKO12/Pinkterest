@@ -32,6 +32,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
+      - name: Generate prisma schema 
+        shell: bash 
+        run: npx prisma generate --schema ./packages/schema/prisma/schema.prisma
+      
       - name: Run tests 
         run: pnpm --filter=server test:e2e
       
