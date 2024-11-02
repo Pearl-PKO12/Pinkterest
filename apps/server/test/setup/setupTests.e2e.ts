@@ -25,8 +25,6 @@ export let mh: MailHog;
 
 // initialize test container
 beforeAll(async () => {
-    console.log("enter")
-
     databaseContainer = await new PostgreSqlContainer()
         .withDatabase('test_db')
         .withUsername('test_user')
@@ -45,7 +43,7 @@ beforeAll(async () => {
         protocol: 'http:',
         basePath: '/api',
     });
-    console.log("how")
+    
     redisContainer = await new RedisContainer().start();
 
     const redisUrl = redisContainer.getConnectionUrl();
@@ -56,7 +54,7 @@ beforeAll(async () => {
     process.env.REDIS_URI = redisUrl;
     process.env.SMTP_URI = smtp_uri;
 
-    await execAsync(`npx prisma migrate deploy`, {
+    await execAsync(`npx prisma migrate deploy --schema ../../packages/schema/prisma/schema.prisma`, {
         env: {
             ...process.env,
             DATABASE_URL: databaseUrl,

@@ -3,12 +3,12 @@ import { app, mh, prisma } from './setup/setupTests.e2e';
 import request from 'supertest';
 import { AuthService } from '@server/modules/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { RefreshTokenDto } from '@server/types/auth';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { getQueueToken } from '@nestjs/bullmq';
 import Mail from 'nodemailer/lib/mailer';
+import { RefreshTokenDto } from '@schema/auth';
 
 async function retry<U>(
     fn: () => U | Promise<U> | null | undefined,
@@ -32,7 +32,7 @@ describe('Auth', () => {
     describe('Sign Up', () => {
         it('should successfully sign up a new user', async () => {
             let response = await request(app.getHttpServer())
-                .post('/auth/signup')
+                .post('/user/signup')
                 .send(MockUserDto)
                 .expect(200);
             expect(response.body).toHaveProperty('access_token');
@@ -48,7 +48,7 @@ describe('Auth', () => {
             await authService.signUp(MockUserDto);
 
             await request(app.getHttpServer())
-                .post('/auth/signup')
+                .post('/user/signup')
                 .send(MockUserDto)
                 .expect(400);
         });
@@ -60,7 +60,7 @@ describe('Auth', () => {
             await authService.signUp(MockUserDto);
 
             const response = await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send(MockUserDto)
                 .expect(200);
 
@@ -90,7 +90,7 @@ describe('Auth', () => {
 
         it('should return 404 if user does not exist', async () => {
             await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send(MockUserDto)
                 .expect(HttpStatus.NOT_FOUND);
         });
@@ -99,7 +99,7 @@ describe('Auth', () => {
             await app.get(AuthService).signUp(MockUserDto);
 
             await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send({ ...MockUserDto, password: 'wrongpassword' })
                 .expect(HttpStatus.FORBIDDEN);
         });
@@ -112,7 +112,7 @@ describe('Auth', () => {
             const jwtService = app.get(JwtService);
 
             const loginResponse = await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send(MockUserDto)
                 .expect(HttpStatus.OK);
 
@@ -129,7 +129,7 @@ describe('Auth', () => {
                 });
 
             const refreshResponse = await request(app.getHttpServer())
-                .post('/auth/refresh')
+                .post('/user/refresh')
                 .set('Authorization', `Bearer ${refresh_token}`)
                 .expect(200);
 
@@ -145,7 +145,7 @@ describe('Auth', () => {
                 });
 
             await request(app.getHttpServer())
-                .get('/auth/profile')
+                .get('/user/profile')
                 .set('Authorization', `Bearer ${access_token}`)
                 .expect(HttpStatus.OK);
         });
@@ -157,13 +157,13 @@ describe('Auth', () => {
 
             // invalid refresh token
             await request(app.getHttpServer())
-                .post('/auth/refresh')
+                .post('/user/refresh')
                 .set('Authorization', `Bearer ${invalidToken}`)
                 .expect(HttpStatus.UNAUTHORIZED);
 
             // invalid access token
             await request(app.getHttpServer())
-                .get('/auth/profile')
+                .get('/user/profile')
                 .set('Authorization', `Bearer ${invalidToken}`)
                 .expect(HttpStatus.UNAUTHORIZED);
         });
@@ -173,14 +173,14 @@ describe('Auth', () => {
         const jwtService = app.get(JwtService);
 
         const responseBody = await request(app.getHttpServer())
-            .post('/auth/signup')
+            .post('/user/signup')
             .send(MockUserDto)
             .expect(HttpStatus.OK);
 
         const { refresh_token } = responseBody.body;
 
         await request(app.getHttpServer())
-            .post('/auth/logout')
+            .post('/user/logout')
             .set('Authorization', `Bearer ${refresh_token}`)
             .expect(HttpStatus.OK);
 
@@ -196,14 +196,14 @@ describe('Auth', () => {
     describe('Change password', () => {
         it('should successfully change a user password', async () => {
             const signupResponse = await request(app.getHttpServer())
-                .post('/auth/signup')
+                .post('/user/signup')
                 .send(MockUserDto)
                 .expect(HttpStatus.OK);
 
             const { access_token } = signupResponse.body;
 
             await request(app.getHttpServer())
-                .post('/auth/change-password')
+                .post('/user/change-password')
                 .send({
                     oldPassword: MockUserDto.password,
                     newPassword: 'new password',
@@ -212,26 +212,26 @@ describe('Auth', () => {
                 .expect(HttpStatus.OK);
 
             await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send(MockUserDto)
                 .expect(HttpStatus.FORBIDDEN);
 
             await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send({ ...MockUserDto, password: 'new password' })
                 .expect(HttpStatus.OK);
         });
 
         it('should throw Forbidden error if user submits a wrong password', async () => {
             const signupResponse = await request(app.getHttpServer())
-                .post('/auth/signup')
+                .post('/user/signup')
                 .send(MockUserDto)
                 .expect(HttpStatus.OK);
 
             const { access_token } = signupResponse.body;
 
             await request(app.getHttpServer())
-                .post('/auth/change-password')
+                .post('/user/change-password')
                 .send({
                     oldPassword: 'wrong password',
                     newPassword: 'new password',
@@ -246,7 +246,7 @@ describe('Auth', () => {
             const emailQueue = app.get<Queue>(getQueueToken('email'));
 
             const signupResponse = await request(app.getHttpServer())
-                .post('/auth/signup')
+                .post('/user/signup')
                 .send(MockUserDto)
                 .expect(HttpStatus.OK);
 
@@ -270,7 +270,7 @@ describe('Auth', () => {
             });
 
             await request(app.getHttpServer())
-                .post('/auth/forgot-password')
+                .post('/user/forgot-password')
                 .send({ email: MockUserDto.email })
                 .expect(200);
 
@@ -294,25 +294,25 @@ describe('Auth', () => {
             // test ramndom token
 
             await request(app.getHttpServer())
-                .post('/auth/reset-password')
+                .post('/user/reset-password')
                 .send({ token: token, newPassword: 'newPassword' })
                 .expect(200);
 
             // can login in with new password
             await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send({ email: MockUserDto.email, password: 'newPassword' })
                 .expect(200);
 
             // cannot login with old password
             await request(app.getHttpServer())
-                .post('/auth/login')
+                .post('/user/login')
                 .send(MockUserDto)
                 .expect(HttpStatus.FORBIDDEN);
 
             // invalidate existing refresh tokens
             await request(app.getHttpServer())
-                .post('/auth/refresh')
+                .post('/user/refresh')
                 .set('Authorization', `Bearer ${refresh_token}`)
                 .expect(HttpStatus.UNAUTHORIZED);
         });

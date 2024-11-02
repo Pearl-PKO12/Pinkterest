@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Post as PostEntity, User as UserEntity } from '@prisma/client';
 import { DatabaseService } from '@server/modules/database/database.service';
 import request from 'supertest';
-import { CreatePostDto } from '@server/modules/posts/dto/create-post.dto';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { AppModule } from '@server/app.module';
 import { MockPost, MockUserDto, MockUserEntity } from '../src/fixtures';
@@ -15,7 +14,7 @@ describe('Posts', () => {
 
     beforeEach(async () => {
         const signupResponse = await request(app.getHttpServer())
-            .post('/auth/signup')
+            .post('/user/signup')
             .send(MockUserDto)
             .expect(HttpStatus.OK);
 
