@@ -36,6 +36,10 @@ jobs:
         shell: bash 
         run: npx prisma generate --schema ./packages/schema/prisma/schema.prisma
       
+      - name: Add bin folder to PATH 
+        shell: bash 
+        run: export PATH="./node_modules/.bin:$PATH"
+      
       - name: Run tests 
         run: pnpm --filter=server test:e2e
       

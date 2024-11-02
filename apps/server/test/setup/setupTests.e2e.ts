@@ -14,6 +14,7 @@ import mailhog, { MailHog } from 'mailhog';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { promisify } from 'util';
 import { MockLogger } from './MockLoggerService';
+import path from 'path';
 
 const execAsync = promisify(exec);
 let prisma: PrismaClient;
@@ -43,7 +44,7 @@ beforeAll(async () => {
         protocol: 'http:',
         basePath: '/api',
     });
-    
+
     redisContainer = await new RedisContainer().start();
 
     const redisUrl = redisContainer.getConnectionUrl();
@@ -54,12 +55,15 @@ beforeAll(async () => {
     process.env.REDIS_URI = redisUrl;
     process.env.SMTP_URI = smtp_uri;
 
-    await execAsync(`npx prisma migrate deploy --schema ../../packages/schema/prisma/schema.prisma`, {
-        env: {
-            ...process.env,
-            DATABASE_URL: databaseUrl,
+    await execAsync(
+        `npx prisma migrate deploy --schema ${path.join(__dirname, '../../../../packages/schema/prisma/schema.prisma')}`,
+        {
+            env: {
+                ...process.env,
+                DATABASE_URL: databaseUrl,
+            },
         },
-    });
+    );
 
     prisma = new PrismaClient({
         datasources: {
