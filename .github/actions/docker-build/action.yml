@@ -11,27 +11,11 @@ inputs:
     required: false
     type: string
     default: ''
-  ACCESS_KEY:
-    description: 'AWS access key'
-    required: true
-  SECRET_KEY:
-    description: 'AWS secret key'
-    required: true
-  REGION:
-    description: 'AWS region'
-    required: true
   ECR_REPOSITORY:
     description: 'AWS region'
     required: true
-  EC2_USERNAME:
-    required: true
-  EC2_URL: 
-    required: true
-  EC2_SSH_KEY:
-    required: true
   container_name:
     required: true
-
 
 
 runs: 
@@ -54,11 +38,11 @@ runs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
       with:
-        # role-to-assume: ${{inputs.ROLE_TO_ASSUME}}
-        # aws-region: ${{inputs.REGION}}
-        aws-access-key-id: ${{ inputs.ACCESS_KEY }}
-        aws-secret-access-key: ${{ inputs.SECRET_KEY }}
-        aws-region: ${{ inputs.REGION }}
+        # role-to-assume: ${{secrets.ROLE_TO_ASSUME}}
+        # aws-region: ${{secrets.REGION}}
+        aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.SECRET_KEY }}
+        aws-region: ${{ secrets.REGION }}
 
     - name: Login to Amazon ECR Public
       id: login-ecr
@@ -85,13 +69,13 @@ runs:
     - name: Set up SSH key
       uses: webfactory/ssh-agent@v0.5.3
       with:
-        ssh-private-key: ${{ inputs.EC2_SSH_KEY }}
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
     - name: Pull the images 
       shell: bash
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ inputs.EC2_USERNAME }}@${{ inputs.EC2_URL }} << 'EOF'
-          aws ecr-public get-login-password --region ${{inputs.REGION}} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_URL }} << 'EOF'
+          aws ecr-public get-login-password --region ${{secrets.REGION}} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
           cd ~/pinterest/pinterest
 
