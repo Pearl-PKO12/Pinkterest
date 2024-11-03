@@ -16,6 +16,15 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env: 
+      JWT_ACCESS_SECRET: "JWT_ACCESS_SECRET"
+      JWT_ACCESS_TOKEN_EXPIRES_IN: "1h"
+      JWT_REFRESH_SECRET: "JWT_REFREST_SECRET"
+      JWT_REFRESH_TOKEN_EXPIRES_IN: "5H"
+      MAIL_FROM: "example@gmail.com"
+      RESET_TOKEN_SECRET: "RESET_TOKEN_SECRET"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -43,42 +52,43 @@ jobs:
       - name: Run tests 
         run: pnpm --filter=server test:e2e
       
-  pass-test:     
-    runs-on: ubuntu-latest 
-    needs: test 
-    steps: 
-      - name: Pass test 
-        shell: bash
-        run: echo "passed"
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: always()  
+        with:
+          name: Server Tests            
+          path: "**/reports/junit.xml"   
+          reporter: jest-junit        
 
-  # web:
-  #   runs-on: ubuntu-latest
-    
-  #   steps:
-  #     - uses: actions/checkout@v3
+  web:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v3
         
-  #     - name: Build web 
-  #       uses: "./.github/actions/docker-build/"
-  #       secrets: inherit
-  #       with: 
-  #         docker_file_path: ./apps/web/Dockerfile
-  #         container_name: web 
-  #         service_name: frontend
-  #         ECR_REPOSITORY: ${{ secrets.ECR_WEB_REPOSITORY }}
+      - name: Build web 
+        secrets: inherit
+        uses: "./.github/actions/docker-build/"
+        with: 
+          docker_file_path: ./apps/web/Dockerfile
+          container_name: web 
+          service_name: frontend
+          ECR_REPOSITORY: ${{ secrets.ECR_WEB_REPOSITORY }}
     
-  # server:     
-  #   runs-on: ubuntu-latest
+  server:     
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v3
       
-  #   steps:
-  #     - uses: actions/checkout@v3
-      
-  #     - name: Build server 
-  #       uses: "./.github/actions/docker-build/"
-  #       with: 
-  #         docker_file_path: ./apps/server/DockerfileBuild
-  #         container_name: server
-  #         service_name: backend
-  #         ECR_REPOSITORY: ${{ secrets.ECR_SERVER_REPOSITORY }}
+      - name: Build server 
+        secrets: inherit
+        uses: "./.github/actions/docker-build/"
+        with: 
+          docker_file_path: ./apps/server/DockerfileBuild
+          container_name: server
+          service_name: backend
+          ECR_REPOSITORY: ${{ secrets.ECR_SERVER_REPOSITORY }}
 
 
 

@@ -10,5 +10,15 @@
         "^@server/(.*)$": "<rootDir>/src/$1",
         "^@schema/(.*)$": "<rootDir>/../../packages/schema/$1"
         
-    }
+    }, 
+    "reporters": [
+        "default",
+        [
+          "jest-junit",
+          {
+            "outputDirectory": "reports", 
+            "outputName": "junit.xml"        
+          }
+        ]
+      ]
 }
