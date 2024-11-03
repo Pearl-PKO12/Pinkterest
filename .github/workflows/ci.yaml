@@ -11,7 +11,7 @@ on:
 permissions:
   id-token: write   
   contents: read  
-    
+  checks: write
 
 jobs:
   test:
@@ -44,11 +44,7 @@ jobs:
       - name: Generate prisma schema 
         shell: bash 
         run: npx prisma generate --schema ./packages/schema/prisma/schema.prisma
-      
-      - name: Add bin folder to PATH 
-        shell: bash 
-        run: export PATH="./node_modules/.bin:$PATH"
-      
+    
       - name: Run tests 
         run: pnpm --filter=server test:e2e
       
@@ -56,8 +52,8 @@ jobs:
         uses: dorny/test-reporter@v1
         if: always()  
         with:
-          name: Server Tests            
-          path: "**/reports/junit.xml"   
+          name: Test results            
+          path: "apps/server/reports/junit.xml"   
           reporter: jest-junit        
 
   web:

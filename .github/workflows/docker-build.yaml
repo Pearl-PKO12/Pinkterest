@@ -65,13 +65,12 @@ jobs:
         with:
           registry-type: public
       
-      - name: Set outputs
+      - name: Set Short Github SHA
         id: vars
         shell: bash
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Build and push
-        id: build-and-push
+      - name: Build
         uses: docker/build-push-action@v5
         with:
           context: .
