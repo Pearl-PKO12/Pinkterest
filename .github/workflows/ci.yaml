@@ -61,34 +61,35 @@ jobs:
           reporter: jest-junit        
 
   web:
-    runs-on: ubuntu-latest
     needs: test
-    steps:
-      - uses: actions/checkout@v3
-        
-      - name: Build web 
-        secrets: inherit
-        uses: "./.github/actions/docker-build/"
-        with: 
-          docker_file_path: ./apps/web/Dockerfile
-          container_name: web 
-          service_name: frontend
-          ECR_REPOSITORY: ${{ secrets.ECR_WEB_REPOSITORY }}
+    uses: "./.github/workflows/docker-build.yaml"
+    with: 
+      docker_file_path: ./apps/web/Dockerfile
+      container_name: web 
+      service_name: frontend
+    secrets:
+      ECR_REPOSITORY: ${{ secrets.ECR_WEB_REPOSITORY }}
+      ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      REGION: ${{ secrets.REGION }}
+      EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
+      EC2_URL: ${{secrets.EC2_URL}}
     
-  server:     
-    runs-on: ubuntu-latest
+  server:
     needs: test
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Build server 
-        secrets: inherit
-        uses: "./.github/actions/docker-build/"
-        with: 
-          docker_file_path: ./apps/server/DockerfileBuild
-          container_name: server
-          service_name: backend
-          ECR_REPOSITORY: ${{ secrets.ECR_SERVER_REPOSITORY }}
-
+    uses: "./.github/workflows/docker-build.yaml"
+    with: 
+      docker_file_path: ./apps/server/DockerfileBuild
+      container_name: server 
+      service_name: backend
+    secrets:
+      ECR_REPOSITORY: ${{ secrets.ECR_SERVER_REPOSITORY }}
+      ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      REGION: ${{ secrets.REGION }}
+      EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
+      EC2_URL: ${{secrets.EC2_URL}}
 
 
