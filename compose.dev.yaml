@@ -32,6 +32,11 @@ services:
       retries: 5
 
   backend: 
+    build:
+      context: .
+      dockerfile: ./apps/server/DockerfileBuild
+    container_name: server
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,7 +56,10 @@ services:
       - DATABASE_URL=postgres://user:12345@postgres:5432/pinterest
       
   frontend: 
+    container_name: web 
     build: 
+      context: .
+      dockerfile: ./apps/web/Dockerfile
       args:
         - API_URL=http://backend:4000
     depends_on:
@@ -63,6 +71,18 @@ services:
     environment:
       - API_URL="http://backend:4000"
   
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "8080:80"   # Expose NGINX on port 80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
 volumes:
   postgres_data:
   redis_data:
