@@ -35,15 +35,17 @@ services:
     build:
       context: .
       dockerfile: ./apps/server/DockerfileBuild
-    container_name: server
+    scale: 2
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "4000:4000"
+    # ports:
+    #   - "4000:4000"
+    expose: 
+      - "4000"
     command: >
       sh -c "
       npm run migration -- --schema ./dist/packages/schema/prisma/schema.prisma  && 
@@ -56,7 +58,7 @@ services:
       - DATABASE_URL=postgres://user:12345@postgres:5432/pinterest
       
   frontend: 
-    container_name: web 
+    scale: 2
     build: 
       context: .
       dockerfile: ./apps/web/Dockerfile
@@ -64,8 +66,10 @@ services:
         - API_URL=http://backend:4000
     depends_on:
       - backend
-    ports:
-      - "3000:3000"    
+    expose: 
+      - "4000"
+    # ports:
+    #   - "3000:3000"    
     env_file:
       - ./apps/web/.env
     environment:
