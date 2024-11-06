@@ -103,18 +103,25 @@ jobs:
 
             cd ~/pinterest/pinterest
 
-            docker pull ${{ needs.build.outputs.ecr_registry }}/${{ secrets.ECR_REPOSITORY }}:${{ needs.build.outputs.github_short_sha }}
-
             TAG=${{ needs.build.outputs.github_short_sha }}
 
-            PREVIOUS_CONTAINER=$(docker ps -aqf "name=${{inputs.container_name}}")
+            PREVIOUS_CONTAINER=$(docker ps -aqf "name=${{inputs.service_name}}")
             PREVIOUS_IMAGE=$(docker images -q --filter "reference=${{ needs.build.outputs.ecr_registry }}/${{ secrets.ECR_REPOSITORY }}")
-            docker container rm -f $PREVIOUS_CONTAINER || true
+            
+            # this scales up to two services reusing the existing container (older version) and pulling the latest image for the new container
+            FRONTEND_TAG=$TAG BACKEND_TAG=$TAG docker compose -f ec2-compose.yaml  up ${{inputs.service_name}} -d --scale ${{ inputs.service_name}}=2 --no-recreate --no-deps 
 
-            echo $PREVIOUS_IMAGE
+            # wait for the container to start
+            sleep 30
+            
+            # cleans up old container and image 
+            docker container rm -f $PREVIOUS_CONTAINER || true
             docker rmi -f $PREVIOUS_IMAGE || true
 
-            FRONTEND_TAG=$TAG BACKEND_TAG=$TAG docker compose -f ec2-compose.yaml up -d --force-recreate ${{inputs.service_name}} 
+            FRONTEND_TAG=$TAG BACKEND_TAG=$TAG docker compose -f ec2-compose.yaml up ${{inputs.service_name}} -d --scale ${{ inputs.service_name}}=1 --no-recreate --no-deps 
 
+            NGINX_CONTAINER=$(docker ps -aqf "name=nginx_proxy")
+
+            docker exec $NGINX_CONTAINER nginx -s reload
           EOF
 
