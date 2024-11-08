@@ -13,10 +13,10 @@ permissions:
   contents: read  
   checks: write
 
+
 jobs:
   test:
     runs-on: ubuntu-latest
-
     env: 
       JWT_ACCESS_SECRET: "JWT_ACCESS_SECRET"
       JWT_ACCESS_TOKEN_EXPIRES_IN: "1h"
@@ -71,6 +71,7 @@ jobs:
       EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
       EC2_URL: ${{secrets.EC2_URL}}
+      
     
   server:
     needs: test
@@ -87,5 +88,6 @@ jobs:
       EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
       EC2_URL: ${{secrets.EC2_URL}}
+      CONTAINER_ENV_VARIABLES: ${{secrets.BACKEND_ENV}}
 
 
