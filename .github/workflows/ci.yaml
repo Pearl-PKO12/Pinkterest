@@ -13,6 +13,7 @@ permissions:
   contents: read  
   checks: write
 
+concurrency: deploy-${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
 jobs:
   test:
