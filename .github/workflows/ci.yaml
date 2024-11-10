@@ -16,6 +16,7 @@ permissions:
 concurrency: deploy-${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
 jobs:
+  
   test:
     runs-on: ubuntu-latest
     env: 
@@ -56,9 +57,29 @@ jobs:
           name: Test results            
           path: "apps/server/reports/junit.xml"   
           reporter: jest-junit        
+ 
+  migrate: 
+    needs: test
+    name: Apply migration
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    steps: 
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Apply migration 
+        shell: bash 
+        env: 
+          DATABASE_URL: ${{secrets.DATABASE_URL}}
+        run: npx prisma migrate deploy --schema  ./packages/schema/prisma/schema.prisma
 
   web:
-    needs: test
+    needs: migrate
     uses: "./.github/workflows/docker-build.yaml"
     with: 
       docker_file_path: ./apps/web/Dockerfile
@@ -75,7 +96,7 @@ jobs:
       
     
   server:
-    needs: test
+    needs: migrate
     uses: "./.github/workflows/docker-build.yaml"
     with: 
       docker_file_path: ./apps/server/DockerfileBuild
@@ -91,4 +112,4 @@ jobs:
       EC2_URL: ${{secrets.EC2_URL}}
       CONTAINER_ENV_VARIABLES: ${{secrets.BACKEND_ENV}}
 
-
+ 

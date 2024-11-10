@@ -99,8 +99,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
       
-      
-
       - name: Pull the images 
         shell: bash
         run: |
