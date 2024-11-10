@@ -1,0 +1,1 @@
+[![CI/CD Pipeline](https://github.com/Pearl-Pko/PinterestClone/actions/workflows/ci.yaml/badge.svg)](https://github.com/Pearl-Pko/PinterestClone/actions/workflows/ci.yaml)

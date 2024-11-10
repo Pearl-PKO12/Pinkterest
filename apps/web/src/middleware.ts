@@ -15,9 +15,11 @@ export function middleware(req: NextRequest) {
 
   return NextResponse.next();
 }
+// mod
 
 export const config = {
   matcher: [
     "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };
+

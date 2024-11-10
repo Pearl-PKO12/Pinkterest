@@ -9,17 +9,16 @@ on:
       - workflow
 
 permissions:
-  id-token: write   
-  contents: read  
+  id-token: write
+  contents: read
   checks: write
 
 concurrency: deploy-${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
 jobs:
-  
   test:
     runs-on: ubuntu-latest
-    env: 
+    env:
       JWT_ACCESS_SECRET: "JWT_ACCESS_SECRET"
       JWT_ACCESS_TOKEN_EXPIRES_IN: "1h"
       JWT_REFRESH_SECRET: "JWT_REFREST_SECRET"
@@ -30,60 +29,104 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - uses: pnpm/action-setup@v2
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version-file: '.nvmrc'
-          cache: "pnpm"
-          cache-dependency-path: '**/pnpm-lock.yaml'
-      
+            node-version-file: ".nvmrc"
+            cache: "pnpm"
+            cache-dependency-path: "**/pnpm-lock.yaml"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
-      - name: Generate prisma schema 
-        shell: bash 
+
+      - name: Generate prisma schema
+        shell: bash
         run: npx prisma generate --schema ./packages/schema/prisma/schema.prisma
-    
-      - name: Run tests 
+
+      - name: Run tests
         run: pnpm --filter=server test:e2e
-      
+
       - name: Test Report
         uses: dorny/test-reporter@v1
-        if: always()  
+        if: always()
         with:
-          name: Test results            
-          path: "apps/server/reports/junit.xml"   
-          reporter: jest-junit        
- 
-  migrate: 
-    needs: test
+            name: Test results
+            path: "apps/server/reports/junit.xml"
+            reporter: jest-junit
+
+  diff:
+    name: "Files Changed"
+    runs-on: ubuntu-latest
+    permissions:
+        pull-requests: read
+    outputs:
+      server: ${{steps.filter.outputs.server}}
+      web: ${{steps.filter.outputs.web}}
+      schema: ${{steps.filter.outputs.schema}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: ${{ github.ref }}
+          filters: |
+            server: 
+              - 'apps/server/**'
+              - 'packages/**'
+            web: 
+              - 'apps/web/**'
+              - 'packages/**'
+            schema: 
+              - 'packages/schema/prisma/**'
+
+  
+  tio: 
+    needs: [diff, migrate, test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Test
+        shell: bash 
+        run: |  
+          echo ${{needs.diff.outputs.server}}
+          echo ${{needs.migrate.result}}
+          echo ${{needs.test.result}}
+          echo ${{needs.diff.outputs.server == 'true'}}
+          echo ${{needs.diff.outputs.web}}
+          echo ${{needs.diff.outputs.schema}}
+          echo ${{needs.diff.outputs.server == 'true' && needs.migrate.result != 'failed' && needs.test.result == 'success' }}
+
+  migrate:
+    needs: [test, diff]
     name: Apply migration
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-    steps: 
+    steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
-      - name: Apply migration 
-        shell: bash 
-        env: 
+      - name: Apply migration
+        shell: bash
+        if: ${{needs.diff.outputs.schema == 'true' && needs.test.result == 'success'}}
+        env:
           DATABASE_URL: ${{secrets.DATABASE_URL}}
         run: npx prisma migrate deploy --schema  ./packages/schema/prisma/schema.prisma
 
   web:
-    needs: migrate
+    needs: [migrate, diff, test]
     uses: "./.github/workflows/docker-build.yaml"
-    with: 
+    if: ${{needs.diff.outputs.web == 'true' && needs.migrate.result == 'success' && needs.test.result == 'success' }}
+    with:
       docker_file_path: ./apps/web/Dockerfile
-      container_name: web 
+      container_name: web
       service_name: frontend
     secrets:
       ECR_REPOSITORY: ${{ secrets.ECR_WEB_REPOSITORY }}
@@ -93,14 +136,14 @@ jobs:
       EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
       EC2_URL: ${{secrets.EC2_URL}}
-      
-    
+
   server:
-    needs: migrate
+    needs: [migrate, diff, test]
+    if: ${{needs.diff.outputs.server == 'true' && needs.migrate.result == 'success' && needs.test.result == 'success' }}
     uses: "./.github/workflows/docker-build.yaml"
-    with: 
+    with:
       docker_file_path: ./apps/server/DockerfileBuild
-      container_name: server 
+      container_name: server
       service_name: backend
     secrets:
       ECR_REPOSITORY: ${{ secrets.ECR_SERVER_REPOSITORY }}
@@ -111,5 +154,3 @@ jobs:
       EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
       EC2_URL: ${{secrets.EC2_URL}}
       CONTAINER_ENV_VARIABLES: ${{secrets.BACKEND_ENV}}
-
- 

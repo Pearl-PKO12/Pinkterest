@@ -33,7 +33,6 @@ on:
         required: true
       CONTAINER_ENV_VARIABLES:
         required: false
-
 jobs: 
   build:
     runs-on: ubuntu-latest

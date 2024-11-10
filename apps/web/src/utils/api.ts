@@ -6,6 +6,6 @@ import { redirect } from "next/navigation";
 
 const api = axios.create({ baseURL: "/api" });
 
-
+//del
 
 export default api;
