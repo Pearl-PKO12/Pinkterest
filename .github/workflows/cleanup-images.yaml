@@ -3,7 +3,10 @@ name: Clean up ECR Images
 on:
   schedule:
     - cron: '30 0 * * 0'  # Runs every Sunday at 2 AM UTC
-  workflow_dispatch:      # Allows manual trigger as well
+  workflow_dispatch:
+    inputs:
+      a:
+        description: "d"      # Allows manual trigger as well
 
 jobs:
   cleanup-ecr:
