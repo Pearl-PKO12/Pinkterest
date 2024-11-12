@@ -62,7 +62,6 @@ jobs:
             ${{ runner.os }}-buildx-${{ inputs.service_name }}-
 
       - name: Configure AWS credentials
-        secrets: inherit
         uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
         with:
         
