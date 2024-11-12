@@ -58,10 +58,10 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4 # More information on this action can be found below in the 'AWS Credentials' section
         with:
-          # role-to-assume: ${{secrets.ROLE_TO_ASSUME}}
+          role-to-assume: ${{secrets.ROLE_TO_ASSUME}}
           # aws-region: ${{secrets.REGION}}
-          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.SECRET_KEY }}
+          # aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          # aws-secret-access-key: ${{ secrets.SECRET_KEY }}
           aws-region: ${{ secrets.REGION }}
 
       - name: Login to Amazon ECR Public
@@ -84,7 +84,7 @@ jobs:
           file: ${{ inputs.docker_file_path }}
           push: true
           provenance: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{secrets.REPOSITORY_ALIAS}}/${{ secrets.ECR_REPOSITORY }}:${{ steps.vars.outputs.sha_short }}
       
     outputs:
       ecr_registry: ${{ steps.login-ecr.outputs.registry }}
@@ -113,7 +113,7 @@ jobs:
             TAG=${{ needs.build.outputs.github_short_sha }}
 
             PREVIOUS_CONTAINER=$(docker ps -aqf "name=${{inputs.service_name}}")
-            PREVIOUS_IMAGE=$(docker images -q --filter "reference=${{ needs.build.outputs.ecr_registry }}/${{ secrets.ECR_REPOSITORY }}")
+            PREVIOUS_IMAGE=$(docker images -q --filter "reference=${{ needs.build.outputs.ecr_registry }}/${{secrets.REPOSITORY_ALIAS}}/${{ secrets.ECR_REPOSITORY }}")
             
             sudo mkdir -p /etc/pinterest
             sudo sh -c 'cat > /etc/pinterest/${{ inputs.service_name }}.env <<EOF 
