@@ -118,7 +118,7 @@ jobs:
       REGION: ${{ secrets.REGION }}
       EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
-      EC2_URL: ${{secrets.EC2_URL}}
+      EC2_URL: ${{secrets.EC2_IP}}
 
   server:
     needs: [migrate, diff, test]
@@ -135,5 +135,5 @@ jobs:
       REGION: ${{ secrets.REGION }}
       EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
       EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
-      EC2_URL: ${{secrets.EC2_URL}}
+      EC2_URL: ${{secrets.EC2_IP}}
       CONTAINER_ENV_VARIABLES: ${{secrets.BACKEND_ENV}}
