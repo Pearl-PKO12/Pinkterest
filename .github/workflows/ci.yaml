@@ -111,7 +111,15 @@ jobs:
       docker_file_path: ./apps/web/Dockerfile
       container_name: web
       service_name: frontend
-    secrets: inherit
+    secrets:
+      ECR_REPOSITORY: ${{ secrets.ECR_WEB_REPOSITORY }}
+      ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      REGION: ${{ secrets.REGION }}
+      EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
+      EC2_IP: ${{secrets.EC2_IP}}
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
   server:
     needs: [migrate, diff, test]
@@ -130,3 +138,4 @@ jobs:
       EC2_USERNAME: ${{ secrets.EC2_USERNAME}}
       EC2_IP: ${{secrets.EC2_IP}}
       CONTAINER_ENV_VARIABLES: ${{secrets.BACKEND_ENV}}
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

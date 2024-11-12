@@ -33,6 +33,8 @@ on:
         required: true
       CONTAINER_ENV_VARIABLES:
         required: false
+      GITHUB_TOKEN: 
+        required: true
 
 
 
