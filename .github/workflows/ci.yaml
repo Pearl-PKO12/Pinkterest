@@ -8,10 +8,7 @@ on:
     branches:
       - workflow
 
-permissions:
-  id-token: write
-  contents: read
-  checks: write
+
 
 concurrency: deploy-${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
@@ -121,6 +118,10 @@ jobs:
       EC2_IP: ${{secrets.EC2_IP}}
 
   server:
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
     needs: [migrate, diff, test]
     if: ${{needs.diff.outputs.server == 'true'}}
     uses: "./.github/workflows/docker-build.yaml"
